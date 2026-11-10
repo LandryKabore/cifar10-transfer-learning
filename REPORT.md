@@ -6,71 +6,41 @@
 
 ## What I built and why
 
-I built an image classifier that fine-tunes a pretrained ResNet18 on the CIFAR-10 dataset using PyTorch, then wrapped the trained model in a Gradio web app so a user can upload an image and see predicted class probabilities.
+For this project I fine-tuned a pretrained ResNet18 on CIFAR-10 in PyTorch, then put the model behind a small Gradio app so you can upload a picture and see the class scores.
 
-I chose this project because it matches the approved topic and clearly goes beyond a basic from-scratch network: it uses transfer learning, nontrivial fine-tuning, and a real interactive application layer.
+I picked this because I wanted something past a tiny CNN trained from scratch. Transfer learning felt like a better fit for the “go beyond a basic model” requirement, and wrapping it in Gradio made it easy to show in the demo video instead of just printing accuracy in a terminal.
 
 ## Technology choices
 
-### Framework: PyTorch
-I used PyTorch because:
-- torchvision provides pretrained ResNet weights and CIFAR-10 loaders out of the box
-- the training loop is transparent and easy to customize for partial freezing / fine-tuning
-- Gradio integrates cleanly with PyTorch tensors for inference demos
+I went with **PyTorch** mostly because torchvision already has ResNet weights and the training loop is easy to mess with. I looked at TensorFlow/Keras too, but freezing some layers and swapping the head felt more straightforward in PyTorch for me.
 
-Alternatives considered:
-- TensorFlow/Keras would also work for transfer learning, but PyTorch gave me more direct control over which layers stay frozen
+For the model I used **ResNet18**. It’s pretrained on ImageNet, not huge, and runs fine on my Mac. What I did:
 
-### Architecture: ResNet18 + custom classifier head
-ResNet18 is a strong ImageNet-pretrained baseline that is small enough to fine-tune on a laptop. I:
-1. Loaded ImageNet-pretrained weights
-2. Froze early convolutional layers
-3. Fine-tuned `layer4` and replaced the final fully connected layer with Dropout + Linear(10)
+- load the pretrained weights
+- freeze the early layers
+- fine-tune `layer4` plus a new classifier head (Dropout + Linear for 10 classes)
 
-This is more meaningful than training a tiny CNN from random initialization on CIFAR-10.
+I used **CIFAR-10** because it’s a normal benchmark (60k tiny 32×32 images, 10 classes) and has a real test set. ResNet wants bigger inputs though, so I resize everything to 224×224 and use ImageNet normalization.
 
-### Dataset: CIFAR-10
-CIFAR-10 has 60,000 32×32 color images across 10 classes. It is:
-- standard and reproducible for coursework
-- large enough to show real training dynamics
-- easy to evaluate with a held-out test set
+I used **Gradio** for the app layer so the demo is just: open the page, click an example or upload something, hit Submit, look at the top predictions.
 
-Because ResNet expects larger inputs, images are resized to 224×224 and normalized with ImageNet mean/std.
+## Problems I ran into
 
-### Application layer: Gradio
-Instead of stopping at a notebook/script, I wrapped inference in Gradio so the model can be demonstrated live: upload an image → get ranked class probabilities.
+The first annoying one was image size. CIFAR images are 32×32 and look blurry when you blow them up in the UI, but ResNet expects around 224×224. I just resize/crop in both training and the app so they match.
 
-## Problems and solutions
+Training every layer was going to be slow on a laptop, so I froze most of the network and only trained the later block + head. That got me solid accuracy without waiting forever.
 
-1. **Input size mismatch**  
-   CIFAR-10 images are 32×32, while ResNet18 expects ~224×224.  
-   **Solution:** Resize / crop transforms before training and inference.
+Getting the dataset was also a pain. The usual Toronto download was slow / kept having SSL issues on my machine, so I pulled CIFAR-10 from the Hugging Face `uoft-cs/cifar10` mirror instead and wrapped it for the DataLoader.
 
-2. **Training cost**  
-   Full end-to-end fine-tuning of every layer is slower on a laptop.  
-   **Solution:** Freeze early layers and only train `layer4` + the classifier head.
-
-3. **Demo dependency on checkpoint**  
-   The Gradio app needs a trained checkpoint.  
-   **Solution:** Training saves `checkpoints/resnet18_cifar10_best.pt` and records metrics in `training_history.json`.
-
-4. **Dataset download reliability**  
-   The classic Toronto CIFAR-10 tarball was slow / SSL-fragile on my machine.  
-   **Solution:** Load CIFAR-10 through the Hugging Face `uoft-cs/cifar10` dataset mirror and wrap it for the PyTorch DataLoader.
+One more small thing: the Gradio app needs the saved checkpoint. Training writes `checkpoints/resnet18_cifar10_best.pt` and the metrics go in `training_history.json`.
 
 ## What I learned
 
-- Transfer learning can reach strong accuracy faster than training from scratch
-- Freezing vs fine-tuning layers is a practical tradeoff between speed and adaptation
-- Packaging a model into an interactive app forces cleaner checkpointing and preprocessing consistency between train and serve time
+Transfer learning is honestly a big jump compared to training from scratch on this kind of data. Freezing vs unfreezing layers is a real tradeoff — faster training if you freeze more, but maybe less adaptation. Also, once you put the model in an app you notice quickly if train and inference preprocessing don’t match.
 
-## How I would improve it
+## How I’d improve it
 
-- Train for more epochs and unfreeze additional layers once the head stabilizes
-- Add confusion-matrix analysis and per-class metrics
-- Support a custom dataset (for example, a small personal photo dataset)
-- Deploy the Gradio app publicly (Hugging Face Spaces) for easier sharing
-- Add automated tests for preprocessing and class-label mapping
+I’d probably train longer and unfreeze more layers after the head settles. A confusion matrix / per-class breakdown would help see what it’s bad at. It would also be cool to try my own photos, or host the Gradio app somewhere public so people don’t need to run it locally.
 
 ## How to run
 
@@ -84,8 +54,7 @@ python src/app.py
 
 ## Results
 
-Trained for **5 epochs** on Apple MPS (batch size 64, Adam lr=1e-3, cosine schedule).  
-Best held-out CIFAR-10 **test accuracy: 93.56%**.
+I trained for 5 epochs on Apple MPS (batch size 64, Adam, lr=1e-3, cosine schedule). Best test accuracy was **93.56%**.
 
 | Epoch | Train loss | Train acc | Test acc |
 |------:|-----------:|----------:|---------:|
@@ -95,4 +64,4 @@ Best held-out CIFAR-10 **test accuracy: 93.56%**.
 | 4 | 0.1467 | 95.12% | 92.63% |
 | 5 | 0.0898 | 97.00% | **93.56%** |
 
-Full metrics are also saved in `checkpoints/training_history.json`. The Gradio app loads `checkpoints/resnet18_cifar10_best.pt` and shows the same top-5 class probabilities used in the live demo.
+Same numbers are in `checkpoints/training_history.json`. The demo loads the best checkpoint and shows top-5 probabilities.
