@@ -84,4 +84,15 @@ python src/app.py
 
 ## Results
 
-*(Filled after training completes — see `checkpoints/training_history.json`.)*
+Trained for **5 epochs** on Apple MPS (batch size 64, Adam lr=1e-3, cosine schedule).  
+Best held-out CIFAR-10 **test accuracy: 93.56%**.
+
+| Epoch | Train loss | Train acc | Test acc |
+|------:|-----------:|----------:|---------:|
+| 1 | 0.4524 | 84.52% | 88.43% |
+| 2 | 0.2940 | 90.06% | 88.20% |
+| 3 | 0.2215 | 92.38% | 91.39% |
+| 4 | 0.1467 | 95.12% | 92.63% |
+| 5 | 0.0898 | 97.00% | **93.56%** |
+
+Full metrics are also saved in `checkpoints/training_history.json`. The Gradio app loads `checkpoints/resnet18_cifar10_best.pt` and shows the same top-5 class probabilities used in the live demo.

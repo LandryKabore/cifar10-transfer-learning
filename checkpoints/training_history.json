@@ -1,0 +1,35 @@
+{
+  "best_test_acc": 93.56,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.4524,
+      "train_acc": 84.52,
+      "test_acc": 88.43
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.294,
+      "train_acc": 90.06,
+      "test_acc": 88.2
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.2215,
+      "train_acc": 92.38,
+      "test_acc": 91.39
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.1467,
+      "train_acc": 95.12,
+      "test_acc": 92.63
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.0898,
+      "train_acc": 97.0,
+      "test_acc": 93.56
+    }
+  ]
+}
