@@ -13,6 +13,7 @@ from model import CIFAR10_CLASSES, build_model, get_device
 
 ROOT = Path(__file__).resolve().parents[1]
 CKPT_PATH = ROOT / "checkpoints" / "resnet18_cifar10_best.pt"
+EXAMPLES_DIR = ROOT / "examples"
 
 MEAN = [0.485, 0.456, 0.406]
 STD = [0.229, 0.224, 0.225]
@@ -69,7 +70,12 @@ def main() -> None:
         outputs=gr.Label(num_top_classes=5, label="Predictions"),
         title="CIFAR-10 Transfer Learning Classifier",
         description=subtitle,
-        examples=None,
+        examples=[
+            str(p)
+            for name in CIFAR10_CLASSES
+            if (p := EXAMPLES_DIR / f"{name}.png").exists()
+        ]
+        or None,
         flagging_mode="never",
     )
     demo.launch()
