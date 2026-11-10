@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.DS_Store
+data/
+checkpoints/*.pt
+!checkpoints/.gitkeep
+*.pth
+.ipynb_checkpoints/
+runs/
+wandb/
+.gradio/
