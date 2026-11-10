@@ -48,3 +48,5 @@ checkpoints/   # saved model + metrics
 ## Notes
 
 CIFAR-10 images are upsampled to 224×224 so they match the ImageNet-pretrained ResNet input size.
+
+Training loads CIFAR-10 from the Hugging Face `uoft-cs/cifar10` mirror (cached under `data/hf_cache/`) instead of the slower Toronto download.

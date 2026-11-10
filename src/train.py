@@ -8,8 +8,9 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
+from datasets import load_dataset
+from torch.utils.data import DataLoader, Dataset
+from torchvision import transforms
 from tqdm import tqdm
 
 from model import CIFAR10_CLASSES, build_model, get_device
@@ -17,6 +18,25 @@ from model import CIFAR10_CLASSES, build_model, get_device
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 CKPT_DIR = ROOT / "checkpoints"
+
+
+class HFCifar10(Dataset):
+    """Thin wrapper so Hugging Face CIFAR-10 works with torchvision transforms."""
+
+    def __init__(self, hf_split, transform=None):
+        self.ds = hf_split
+        self.transform = transform
+
+    def __len__(self) -> int:
+        return len(self.ds)
+
+    def __getitem__(self, idx: int):
+        row = self.ds[idx]
+        image = row["img"].convert("RGB")
+        label = int(row["label"])
+        if self.transform is not None:
+            image = self.transform(image)
+        return image, label
 
 
 def make_loaders(batch_size: int = 64) -> tuple[DataLoader, DataLoader]:
@@ -42,14 +62,16 @@ def make_loaders(batch_size: int = 64) -> tuple[DataLoader, DataLoader]:
         ]
     )
 
-    train_ds = datasets.CIFAR10(root=DATA_DIR, train=True, download=True, transform=train_tf)
-    test_ds = datasets.CIFAR10(root=DATA_DIR, train=False, download=True, transform=test_tf)
+    # Hugging Face mirror avoids the slow/SSL-fragile Toronto download.
+    hf = load_dataset("uoft-cs/cifar10", cache_dir=str(DATA_DIR / "hf_cache"))
+    train_ds = HFCifar10(hf["train"], transform=train_tf)
+    test_ds = HFCifar10(hf["test"], transform=test_tf)
 
     train_loader = DataLoader(
-        train_ds, batch_size=batch_size, shuffle=True, num_workers=2, pin_memory=False
+        train_ds, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=False
     )
     test_loader = DataLoader(
-        test_ds, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=False
+        test_ds, batch_size=batch_size, shuffle=False, num_workers=0, pin_memory=False
     )
     return train_loader, test_loader
 
