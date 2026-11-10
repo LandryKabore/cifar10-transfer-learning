@@ -70,7 +70,7 @@ def main() -> None:
         title="CIFAR-10 Transfer Learning Classifier",
         description=subtitle,
         examples=None,
-        allow_flagging="never",
+        flagging_mode="never",
     )
     demo.launch()
 
